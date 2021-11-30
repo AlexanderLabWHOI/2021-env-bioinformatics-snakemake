@@ -1,0 +1,16 @@
+configfile: "config.yaml"
+
+import os
+import pandas as pd
+
+INPUTDIR = config["input_dir"]
+OUTPUTDIR = config["output_dir"]
+
+include: os.path.join("rules", "salmon_mapping.smk")
+
+rule all:
+	input:
+		salmon_output = expand(os.path.join(OUTPUTDIR, "02-salmon_results",
+				       "{sample}", "quant.sf"), sample = sample_list)
+
+ 

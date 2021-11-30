@@ -1,0 +1,3 @@
+name_table: data/name_table.tsv
+input_dir: sample_dir
+output_dir: ../rename_and_convert_30Nov2021

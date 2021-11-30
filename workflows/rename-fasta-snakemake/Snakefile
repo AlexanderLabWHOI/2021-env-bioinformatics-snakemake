@@ -1,0 +1,52 @@
+configfile: "config.yaml"
+import os
+import sys
+import pandas as pd
+
+## READ IN FILE THAT CONTAINS NAMES THAT WE WISH TO USE ##
+name_table = pd.read_csv(config["name_table"], sep = "\t")
+name_dict = dict(zip(name_table.old_names, name_table.new_names))
+
+def get_revised_name(original_file_name):
+	return os.path.join(config["output_dir"], "02-renamed_files",
+			name_dict[original_file_name] + ".fasta")
+
+rule all:
+	input:
+		converted_files = expand(os.path.join(config["output_dir"],
+					"02-seqtk_fasta_files",
+					"{original_file}.fasta"),
+					original_file = name_table.old_names),
+		renamed_files = expand(os.path.join(config["output_dir"], 
+				       "02-renamed_files",
+				       "{renamed_file}.fasta"),
+				       renamed_file = name_table.new_names)
+
+## Rule manages use of seqtk for format conversion ##
+rule seqtk:
+	input:
+		original_fastq = os.path.join(config["input_dir"],
+					      "{original_file}.fastq")
+	output:
+		new_fasta = os.path.join(config["output_dir"],
+					 "01-seqtk_fasta_files",
+					 "{original_file}.fasta")
+	conda:
+		os.path.join("envs", "01-seqtk_env.yaml")
+	shell:
+		"""
+		seqtk seq -a {input.original_fastq} {output.new_fasta}
+		"""
+				
+## Rule manages renaming fasta files based on tab-separated file ##
+rule rename:
+	input:
+		fasta_file = os.path.join(config["output_dir"],
+                                         "01-seqtk_fasta_files",
+                                         "{original_file}.fasta")
+	output:
+		renamed_file = lambda variable: get_revised_name(lambda.original_file)
+	shell:
+		"""
+		mv {input.fasta_file} {output.renamed_file}
+		"""
